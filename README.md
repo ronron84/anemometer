@@ -43,6 +43,39 @@ meteo999 → Remote system reboot
 Auto-PIN Handling: Tries 0000/1234 if SIM is locked
 
 Serial Debug: AT command logging (usbConnected flag)
+
+# Installation
+How to Flash the RP2040 with your Wind Station Code
+Method 1: Using Pre-Compiled UF2 File (Quickest Method)
+Enter Bootloader Mode:
+
+Hold the BOOT button (BOOTSEL) while plugging in USB
+
+Your computer will detect a drive named RPI-RP2
+
+Copy the UF2 File:
+
+Drag and drop final2.ino.uf2 to the RPI-RP2 drive
+
+The RP2040 will automatically reboot and run your program
+
+Method 2: Compiling from Arduino IDE (For Code Modifications)
+Open final2.ino in Arduino IDE
+
+Board Configuration:
+
+Select: Tools → Board → Raspberry Pi Pico
+
+(Ensure you've installed the RP2040 core)
+
+Generate UF2:
+
+Go to Sketch → Export Compiled Binary (Ctrl+Alt+S)
+
+The UF2 file will be saved in:
+.../final2/build/pico/final2.ino.uf2
+
+Flash it (same as Method 1)
 ![20250331_072737](https://github.com/user-attachments/assets/b5372ae1-a045-4c39-9f45-f9389016bd85)
 
 ⚙️ Configuration Options
@@ -109,7 +142,36 @@ meteo999 → Réinitialisation à distance
 Gestion Auto du PIN : Teste 0000/1234 si bloqué
 
 Debug Serie : Log des commandes AT
+# Installation
+📌 Méthode 1 : Flasher le fichier .uf2 (Recommandé pour une installation rapide)
+Branchez le RP2040 en mode BOOTSEL :
 
+Maintenez le bouton BOOT (BOOTSEL) enfoncé tout en branchant le câble USB.
+
+Un lecteur appelé RPI-RP2 apparaîtra sur votre ordinateur.
+
+Copiez le fichier .uf2 :
+
+Glissez-déposez le fichier final2.ino.uf2 dans le lecteur RPI-RP2.
+
+Le RP2040 redémarrera automatiquement et exécutera le programme.
+
+⚙️ Méthode 2 : Compiler depuis l'IDE Arduino (Si vous modifiez le code)
+Ouvrez final2.ino dans l'IDE Arduino.
+
+Sélectionnez la carte :
+
+Type de carte : Raspberry Pi Pico (Core RP2040 installé).
+
+Port : Aucun (pour la compilation).
+
+Compilez et exportez le .uf2 :
+
+Allez dans Croquis → Exporter un binaire compilé (Ctrl+Alt+S sous Windows).
+
+Le fichier final2.ino.uf2 sera généré dans le dossier du projet (.../build/pico/).
+
+Transférez-le sur le RP2040 (comme en Méthode 1).
 ⚙️ Options de Configuration
 Commande	Description	Exemple
 AC=<val>	Coefficient anémomètre (x10)	AC=1.5 → 1.5
