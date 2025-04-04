@@ -43,6 +43,7 @@ meteo999 → Remote system reboot
 Auto-PIN Handling: Tries 0000/1234 if SIM is locked
 
 Serial Debug: AT command logging (usbConnected flag)
+![20250331_072737](https://github.com/user-attachments/assets/b5372ae1-a045-4c39-9f45-f9389016bd85)
 
 ⚙️ Configuration Options
 Command	Description	Example
