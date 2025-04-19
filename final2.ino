@@ -25,7 +25,7 @@ uint16_t windVaneOffset = 0;
 // Ajoutez ces variables près de gustCount et maxGustSpeed
 float filteredSpeed = 0.0;       // Vitesse filtrée (lissée)
 uint8_t gustDuration = 0;        // Durée de la rafale en cours (en mesures)
-const float FILTER_COEFF = 0.2;  // Coefficient du filtre (20% de la nouvelle mesure)
+const float FILTER_COEFF = 0.4;  // Coefficient du filtre (20% de la nouvelle mesure)
 // EEPROM
 constexpr int ANEMOMETER_COEFF_EEPROM_ADDR = 0;
 constexpr int ANEMOMETER_OFFSET_EEPROM_ADDR = sizeof(uint16_t);
@@ -538,90 +538,106 @@ void saveValuesToEEPROM() {
     }
 }
 void measureWindSpeed() {
-    // Déclaration UNIQUE de avg1Min
-    float avg1Min = 0.0;
-    
+    // Lecture de la valeur brute du capteur
     uint16_t sensorValue = analogRead(ANEMOMETER_PIN);
-    if (sensorValue < 10) sensorValue = 0;
+    if (sensorValue < 10) sensorValue = 0;  // Seuil minimal pour éliminer le bruit
 
+    // Conversion en tension
     float voltage = sensorValue * ADC_TO_VOLTAGE;
-    ///////////Current output type Measuring range：0~32. 4 m/s Power supply voltage：12V~24V DC output signal：4~20 mA Load capacity：≤200Ωformule de la documentation Value of wind speed=（output voltage-0.4）/1.6*32.4
+    
+    // Conversion tension -> vitesse (m/s)
     float speedMs = ((voltage - 0.4f) / 1.6f) * 32.4f;
-    ///////////////////////////////////////////////////////
     if (speedMs < 0) speedMs = 0;
 
-    uint16_t speedKmh = static_cast<uint16_t>(speedMs * 3.6f * 10);
+    // Application du coefficient et offset (modification importante ici)
+    float adjustedSpeed = speedMs * (anemometerCoeff / 10.0f) + (anemometerOffset / 10.0f);
+    uint16_t speedKmh = static_cast<uint16_t>(adjustedSpeed * 3.6f * 10); // x10 pour précision décimale
+
+    // Debug optionnel (à activer/désactiver selon besoin)
+    if (usbConnected && false) {  // Mettre "true" pour activer le debug
+        Serial.print("[DEBUG] Raw=");
+        Serial.print(sensorValue);
+        Serial.print(" Voltage=");
+        Serial.print(voltage, 3);
+        Serial.print("V SpeedMs=");
+        Serial.print(speedMs, 2);
+        Serial.print("m/s Coeff=");
+        Serial.print(anemometerCoeff / 10.0f, 2);
+        Serial.print(" Offset=");
+        Serial.print(anemometerOffset / 10.0f, 2);
+        Serial.print(" AdjSpeed=");
+        Serial.print(adjustedSpeed, 2);
+        Serial.print("m/s Final=");
+        Serial.print(speedKmh / 10.0f, 1);
+        Serial.println("km/h");
+    }
 
     // 1. Filtrage de la vitesse
     filteredSpeed = (1.0 - FILTER_COEFF) * filteredSpeed + FILTER_COEFF * speedKmh;
-// Mise à jour des données d'abord
+
+    // 2. Mise à jour des données pour les moyennes
     windSpeedSum += speedKmh;
     windSpeedCount++;
     windSpeed1Min[windSpeed1MinIndex] = speedKmh;
-    windSpeed1MinIndex = (windSpeed1MinIndex + 1) % 15;
-
-    // 2. Calcul de la moyenne APRÈS mise à jour
+    
+    // 3. Calcul de la moyenne sur 1 minute
+    float avg1Min = 0.0;
+    uint8_t count = 0;
     for (uint8_t i = 0; i < 15; i++) {
-        avg1Min += windSpeed1Min[i];
+        if (windSpeed1Min[i] > 0) {
+            avg1Min += windSpeed1Min[i];
+            count++;
+        }
     }
-    avg1Min /= 15.0;
+    if (count > 0) avg1Min /= count;
 
-
-
-// 2. Calcul de la moyenne sur 1 minute (simplifiée)
-for (uint8_t i = 0; i < 15; i++) avg1Min += windSpeed1Min[i];
-avg1Min /= 15.0;
-
-// 3. Détection de rafale avec seuil dynamique
-float dynamicThreshold = max(5.0, avg1Min * 0.2); // Seuil = 5 km/h ou 20% de la moyenne
-if (filteredSpeed - avg1Min > dynamicThreshold * 10) { // *10 car speedKmh est en x10
-    gustDuration++;
-    if (gustDuration >= 2) { // Rafale valide si > 4 secondes (2 mesures à 2s d'intervalle)
-        gustCount++;
-        if (speedKmh > maxGustSpeed) maxGustSpeed = speedKmh;
+    // 4. Détection de rafale avec seuil dynamique modifié
+    float dynamicThreshold = max(2.0 * 10, avg1Min * 0.20); // Seuil à 2 km/h ou 20% de la moyenne
+    
+    if (filteredSpeed - avg1Min > dynamicThreshold) {
+        gustDuration++;
+        // Enregistrer immédiatement la vitesse maximale
+        if (speedKmh > maxGustSpeed) {
+            maxGustSpeed = speedKmh;
+        }
+        // Valider comme rafale après 1 mesure (2 secondes)
+        if (gustDuration >= 1) {
+            gustCount++;
+        }
+    } else {
+        gustDuration = 0;
     }
-} else {
-    gustDuration = 0; // Reset si la condition n'est plus remplie
-}
-/////////////////////////////////////////////////////
-    // Mise à jour des données
-    windSpeedSum += speedKmh;
-    windSpeedCount++;
-    windSpeed1Min[windSpeed1MinIndex] = speedKmh;
+
+    // 5. Mise à jour de l'index pour le buffer circulaire
     windSpeed1MinIndex = (windSpeed1MinIndex + 1) % 15;
-    /////////////////////////////////////////////////
-for (uint8_t i = 0; i < 15; i++) avg1Min += windSpeed1Min[i];
-avg1Min /= 15.0;
-////////////////////////////////////////////////////////
-    if (windSpeed1HIndex < 30) {
-        windSpeed1H[windSpeed1HIndex++] = speedKmh;
-    }
 
+    // Affichage normal (si USB connecté)
     if (usbConnected) {
-        Serial.print("Vitesse vent: ");
+        Serial.print("Vitesse: ");
         Serial.print(speedKmh / 10.0f, 1);
+        Serial.print(" km/h | Filtrée: ");
+        Serial.print(filteredSpeed / 10.0f, 1);
+        Serial.print(" km/h | Moyenne: ");
+        Serial.print(avg1Min / 10.0f, 1);
+        Serial.print(" km/h | Rafale max: ");
+        Serial.print(maxGustSpeed / 10.0f, 1);
         Serial.println(" km/h");
     }
-    if (usbConnected) {
-    Serial.print("Vitesse filtrée: ");
-    Serial.print(filteredSpeed / 10.0f, 1);
-    Serial.print(" km/h | Moyenne 1min: ");
-    Serial.print(avg1Min / 10.0f, 1);
-    Serial.print(" km/h | Rafale: ");
-    Serial.println((filteredSpeed - avg1Min) / 10.0f, 1);
 }
-}
-
 void measureWindDirection() {
     uint16_t sensorValue = analogRead(WIND_VANE_PIN);
     float voltage = sensorValue * ADC_TO_VOLTAGE;
     float direction = (voltage / 3.3f) * 360.0f;
-    
+    // Inversion pour corriger Est/Ouest
+    direction = 360.0f - direction;
     direction = (direction * (windVaneCoeff / 10.0f)) + (windVaneOffset / 10.0f);
     
+    // Application calibration
+    direction = (direction * (windVaneCoeff / 10.0f)) + (windVaneOffset / 10.0f);
+    
+    // Normalisation entre 0° et 360°
     while (direction < 0) direction += 360;
     while (direction >= 360) direction -= 360;
-
     if (usbConnected) {
         Serial.print("Direction vent: ");
         Serial.print(direction, 1);
@@ -709,26 +725,35 @@ void calculateTrend() {
         firstHourCycle = false;
     }
 
-    // Nouveau code à insérer :
-if (gustCount > 0) {
-    hourlyGusts[hourlyIndex] = maxGustSpeed / 10.0f;  // Sauvegarde
-    if (usbConnected) {
-        Serial.print("Rafale max cette heure: ");
-        Serial.println(hourlyGusts[hourlyIndex], 1);
+    // NOUVEAU CODE - GESTION DES RAFALES
+    if (gustCount > 0) {
+        hourlyGusts[hourlyIndex] = maxGustSpeed / 10.0f;
+        if (usbConnected) {
+            Serial.print("Rafale max cette heure: ");
+            Serial.println(hourlyGusts[hourlyIndex], 1);
+        }
     }
-} else {
+    // Sauvegarde de la rafale max avant réinitialisation
+    if (maxGustSpeed > 0) {
+        hourlyGusts[hourlyIndex] = maxGustSpeed / 10.0f;
+        if (usbConnected) {
+            Serial.print("Rafale max cette heure: ");
+            Serial.println(hourlyGusts[hourlyIndex], 1);
+        }
+    }
     maxGustSpeed = 0;
-}
-gustCount = 0;
-gustDuration = 0;
+    gustCount = 0;
+    gustDuration = 0;
+
     cycleStartTime = millis();
-if (usbConnected && gustCount > 0) {
-    Serial.print("Rafale détectée! Max: ");
-    Serial.print(maxGustSpeed / 10.0f, 1);
-    Serial.print(" km/h | Durée: ");
-    Serial.print(gustDuration * 2);  // 2 secondes par mesure
-    Serial.println("s");
-}    
+    
+    if (usbConnected && gustCount > 0) {
+        Serial.print("Rafale détectée! Max: ");
+        Serial.print(maxGustSpeed / 10.0f, 1);
+        Serial.print(" km/h | Durée: ");
+        Serial.print(gustDuration * 2);
+        Serial.println("s");
+    }    
 }
 
 void updateTrend(float currentAverage) {
