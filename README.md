@@ -132,3 +132,154 @@ Ce `README.md` est **prêt à l'emploi** – il ne vous reste qu’à :
 3. Personnaliser les détails spécifiques (ex. : numéro de téléphone par défaut).
 ![20250331_072737](https://github.com/user-attachments/assets/b5372ae1-a045-4c39-9f45-f9389016bd85)
 
+Voici la section complète à ajouter dans votre `README.md` pour détailler **toutes les commandes disponibles** via le terminal série ou SMS :
+
+---
+
+## 📡 **Commandes Disponibles**
+
+### **1. Commandes Série (Monitor Arduino)**
+Connectez-vous au port série (`115200 baud`) et envoyez ces commandes :
+
+| Commande          | Description                                                                 | Exemple                          |
+|-------------------|-----------------------------------------------------------------------------|----------------------------------|
+| `?`               | Affiche l'aide avec toutes les commandes                                    | `?`                              |
+| `LIST`            | Liste les valeurs actuelles (vitesse, direction, calibration, etc.)        | `LIST`                           |
+| `AC=<val>`        | Modifie le **coefficient anémomètre** (par défaut: `1.0`)                  | `AC=1.2` → 1.2 x la vitesse brute|
+| `AO=<val>`        | Modifie l'**offset anémomètre** (en km/h, par défaut: `0.0`)               | `AO=0.5` → +0.5 km/h             |
+| `GC=<val>`        | Modifie le **coefficient girouette** (par défaut: `1.0`)                   | `GC=1.1` → ajuste la direction   |
+| `GO=<val>`        | Modifie l'**offset girouette** (en degrés, par défaut: `0.0`)              | `GO=90` → décale de 90°          |
+| `SAVE`            | Sauvegarde la configuration actuelle en **EEPROM**                          | `SAVE`                           |
+| `SIMNUM`          | Affiche le numéro de téléphone de la carte SIM                             | `SIMNUM`                         |
+| `SENDSMS`         | Envoie un SMS de test au numéro par défaut (`DEST_PHONE`)                  | `SENDSMS`                        |
+| `RESET`           | Redémarre la carte (soft reboot)                                           | `RESET`                          |
+
+---
+
+### **2. Commandes par SMS**
+Envoyez un SMS au numéro de la carte SIM avec ces mots-clés :
+
+| SMS Reçu          | Réponse du Système                                                                 |
+|-------------------|-----------------------------------------------------------------------------------|
+| `METEO0000`       | Renvoie un SMS avec **les données actuelles** (vitesse, direction, température).  |
+| `meteo999`        | **Redémarre** la station (uniquement si envoyé par le numéro autorisé).          |
+
+---
+
+### **Exemple d'Utilisation des Commandes Série**
+```bash
+# Afficher la configuration actuelle
+> LIST
+Anémomètre - Coeff: 1.0, Offset: 0.0 km/h
+Girouette - Coeff: 1.0, Offset: 0.0°
+Température: 23.5°C
+
+# Modifier le coefficient anémomètre
+> AC=1.5
+Nouveau coefficient anémomètre: 1.5
+
+# Sauvegarder en EEPROM
+> SAVE
+Configuration sauvegardée.
+```
+
+---
+
+### **3. Calibration Avancée**
+Pour calibrer précisément les capteurs :
+1. **Anémomètre** :  
+   - Placez-le dans un vent **constant** (ex. : 10 km/h mesuré avec un anémomètre de référence).  
+   - Ajustez `AC` et `AO` jusqu’à ce que la valeur affichée corresponde.  
+   ```bash
+   > AC=1.2
+   > AO=0.3
+   > SAVE
+   ```
+
+2. **Girouette** :  
+   - Alignez-la vers le **Nord géographique**.  
+   - Si la direction affichée est incorrecte (ex. : 350° au lieu de 0°), utilisez `GO` pour corriger :  
+   ```bash
+   > GO=10  # Décale de +10°
+   > SAVE
+   ```
+
+---
+
+### **Erreurs Courantes**
+- `ERROR: SIM NOT CONNECTED` → Vérifiez l’antenne et la carte SIM.  
+- `CAPTEUR DS18B20 NON DETECTE` → Vérifiez le branchement (broche `2`).  
+- `CALIBRATION INVALIDE` → Les coefficients doivent être `> 0`.
+
+---
+### **"Fonctionnalités"**.  
+📡 Commandes Disponibles
+1. Commandes Série (Monitor Arduino)
+Connectez-vous au port série (115200 baud) et envoyez ces commandes :
+
+Commande	Description	Exemple
+?	Affiche l'aide avec toutes les commandes	?
+LIST	Liste les valeurs actuelles (vitesse, direction, calibration, etc.)	LIST
+AC=<val>	Modifie le coefficient anémomètre (par défaut: 1.0)	AC=1.2 → 1.2 x la vitesse brute
+AO=<val>	Modifie l'offset anémomètre (en km/h, par défaut: 0.0)	AO=0.5 → +0.5 km/h
+GC=<val>	Modifie le coefficient girouette (par défaut: 1.0)	GC=1.1 → ajuste la direction
+GO=<val>	Modifie l'offset girouette (en degrés, par défaut: 0.0)	GO=90 → décale de 90°
+SAVE	Sauvegarde la configuration actuelle en EEPROM	SAVE
+SIMNUM	Affiche le numéro de téléphone de la carte SIM	SIMNUM
+SENDSMS	Envoie un SMS de test au numéro par défaut (DEST_PHONE)	SENDSMS
+RESET	Redémarre la carte (soft reboot)	RESET
+2. Commandes par SMS
+Envoyez un SMS au numéro de la carte SIM avec ces mots-clés :
+
+SMS Reçu	Réponse du Système
+METEO0000	Renvoie un SMS avec les données actuelles (vitesse, direction, température).
+meteo999	Redémarre la station (uniquement si envoyé par le numéro autorisé).
+Exemple d'Utilisation des Commandes Série
+bash
+# Afficher la configuration actuelle
+> LIST
+Anémomètre - Coeff: 1.0, Offset: 0.0 km/h
+Girouette - Coeff: 1.0, Offset: 0.0°
+Température: 23.5°C
+
+# Modifier le coefficient anémomètre
+> AC=1.5
+Nouveau coefficient anémomètre: 1.5
+
+# Sauvegarder en EEPROM
+> SAVE
+Configuration sauvegardée.
+3. Calibration Avancée
+Pour calibrer précisément les capteurs :
+
+Anémomètre :
+
+Placez-le dans un vent constant (ex. : 10 km/h mesuré avec un anémomètre de référence).
+
+Ajustez AC et AO jusqu’à ce que la valeur affichée corresponde.
+
+bash
+> AC=1.2
+> AO=0.3
+> SAVE
+Girouette :
+
+Alignez-la vers le Nord géographique.
+
+Si la direction affichée est incorrecte (ex. : 350° au lieu de 0°), utilisez GO pour corriger :
+
+bash
+> GO=10  # Décale de +10°
+> SAVE
+Erreurs Courantes
+ERROR: SIM NOT CONNECTED → Vérifiez l’antenne et la carte SIM.
+
+CAPTEUR DS18B20 NON DETECTE → Vérifiez le branchement (broche 2).
+
+CALIBRATION INVALIDE → Les coefficients doivent être > 0.
+
+Cette section peut être intégrée directement dans votre README.md sous la partie "Fonctionnalités".
+Je peux aussi vous fournir une version Markdown optimisée si besoin !
+
+New chat
+Message DeepSeek
