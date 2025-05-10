@@ -80,7 +80,20 @@ Pour sauvegarder la configuration :
 SAVE
 ```
 ![20250331_072737](https://github.com/user-attachments/assets/3cccc44e-6596-45ef-9879-ac85acc09ba2)
+## Exemple config de base pour les rafales 
+Valeurs par défaut pour les rafales
+Facteur de Rafale (GUST_FACTOR) :
 
+Valeur par défaut : 1.5
+Description : Ce facteur est utilisé pour déterminer si une augmentation de la vitesse du vent est considérée comme une rafale. Une valeur de 1.5 signifie que la vitesse du vent doit être 1,5 fois supérieure à la vitesse moyenne pour être considérée comme une rafale.
+Différence Minimale de Rafale (MIN_GUST_DIFF) :
+
+Valeur par défaut : 5.0
+Description : Cette valeur représente la différence minimale absolue en km/h entre la vitesse actuelle du vent et la vitesse moyenne pour qu'une augmentation soit considérée comme une rafale.
+Durée Minimale de Rafale (GUST_MIN_DURATION) :
+
+Valeur par défaut : 120000 (2 minutes en millisecondes)
+Description : Cette valeur représente la durée minimale pendant laquelle la vitesse du vent doit rester élevée pour être considérée comme une rafale.
 ## Contribution
 
 Les contributions sont les bienvenues ! Veuillez ouvrir une issue ou soumettre une pull request pour toute amélioration ou correction.
