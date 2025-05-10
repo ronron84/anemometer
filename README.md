@@ -79,6 +79,7 @@ Pour sauvegarder la configuration :
 ```
 SAVE
 ```
+![20250331_072737](https://github.com/user-attachments/assets/3cccc44e-6596-45ef-9879-ac85acc09ba2)
 
 ## Contribution
 
