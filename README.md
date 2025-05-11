@@ -1,6 +1,3 @@
-Bien sûr ! Voici un exemple de page explicative que vous pouvez utiliser pour votre dépôt GitHub. Cette page explique comment installer et utiliser votre projet de station météo sur une carte RP2040.
-
----
 
 # Station Météo RP2040
 
